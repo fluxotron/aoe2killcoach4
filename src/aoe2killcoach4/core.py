@@ -15,7 +15,6 @@ from aoe2killcoach4.data_mappings import (
     TRASH_LINES,
     UNIT_LINE_MAP,
 )
-from aoe2killcoach4.time_utils import coerce_seconds
 
 
 @dataclass
@@ -88,9 +87,7 @@ def extract_match_info(data: dict[str, Any]) -> dict[str, Any]:
 
 def _action_time(action: dict[str, Any]) -> Optional[int]:
     ts = action.get("timestamp")
-    if ts is None:
-        return None
-    return coerce_seconds(ts)
+    return int(ts) if ts is not None else None
 
 
 def _player_actions(data: dict[str, Any], player_index: int) -> list[dict[str, Any]]:
@@ -151,15 +148,9 @@ def _extract_uptimes(data: dict[str, Any], player_index: int) -> dict[str, Any]:
     if player_index < len(uptimes):
         uptime = uptimes[player_index]
         return {
-            "Feudal": coerce_seconds(uptime.get("feudal"))
-            if uptime.get("feudal") is not None
-            else None,
-            "Castle": coerce_seconds(uptime.get("castle"))
-            if uptime.get("castle") is not None
-            else None,
-            "Imperial": coerce_seconds(uptime.get("imperial"))
-            if uptime.get("imperial") is not None
-            else None,
+            "Feudal": uptime.get("feudal"),
+            "Castle": uptime.get("castle"),
+            "Imperial": uptime.get("imperial"),
         }
     return {}
 
@@ -543,7 +534,7 @@ def analyze_replay(
     opp_index = players.index(opponent)
 
     match_info = extract_match_info(data)
-    duration = coerce_seconds(match_info.get("duration"))
+    duration = int(match_info.get("duration") or 0)
 
     you_actions = _player_actions(data, you_index)
     opp_actions = _player_actions(data, opp_index)

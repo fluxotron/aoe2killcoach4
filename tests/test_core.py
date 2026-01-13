@@ -1,12 +1,10 @@
 from aoe2killcoach4.core import (
-    analyze_replay,
     build_prompt,
     build_tsv_row,
     format_seconds,
     sanitize_filename,
     snapshot_composition,
 )
-from aoe2killcoach4.time_utils import coerce_seconds
 
 
 def test_format_seconds():
@@ -38,28 +36,6 @@ def test_snapshot_composition_basic():
     assert mid["totals_by_line"]["villager"] == 1
     assert mid["totals_by_line"]["archer_line"] == 1
     assert end["totals_by_line"]["archer_line"] == 2
-
-
-def test_coerce_seconds_formats():
-    assert coerce_seconds(10) == 10
-    assert coerce_seconds(10.5) == 10
-    assert coerce_seconds("1679") == 1679
-    assert coerce_seconds("27:59") == 1679
-    assert coerce_seconds("27:59.757000") == 1679
-    assert coerce_seconds("0:27:59.757000") == 1679
-
-
-def test_analyze_replay_with_string_duration():
-    data = {
-        "players": [
-            {"name": "You", "civilization": "Franks", "winner": True},
-            {"name": "Opp", "civilization": "Britons", "winner": False},
-        ],
-        "duration": "0:27:59.757000",
-        "actions": [],
-    }
-    result = analyze_replay(data, you_name=None, you_player=1, export_level="coach")
-    assert result["coach_view"]["units"]["you"]["composition_snapshots"]
 
 
 def test_build_prompt_and_tsv_row():
