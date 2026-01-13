@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-import traceback
 from pathlib import Path
 
 from aoe2killcoach4.core import analyze_replay, parse_replay, write_outputs
@@ -60,8 +59,6 @@ def main(argv: list[str] | None = None) -> int:
             export_level=args.export_level,
         )
     except Exception as exc:  # noqa: BLE001 - surfacing parse failures
-        if args.debug:
-            traceback.print_exc()
         print(f"Error parsing replay: {exc}", file=sys.stderr)
         return 1
 

@@ -1,21 +1,16 @@
 from aoe2killcoach4.core import (
-    analyze_replay,
     build_prompt,
     build_tsv_row,
     format_seconds,
     sanitize_filename,
     snapshot_composition,
 )
-from datetime import timedelta
-
-from aoe2killcoach4.time_utils import coerce_seconds, normalize_time_fields
 
 
 def test_format_seconds():
     assert format_seconds(None) is None
     assert format_seconds(0) == "0:00"
     assert format_seconds(125) == "2:05"
-    assert format_seconds("0:00:02.184000") == "0:02"
 
 
 def test_sanitize_filename():
@@ -41,46 +36,6 @@ def test_snapshot_composition_basic():
     assert mid["totals_by_line"]["villager"] == 1
     assert mid["totals_by_line"]["archer_line"] == 1
     assert end["totals_by_line"]["archer_line"] == 2
-
-
-def test_coerce_seconds_formats():
-    assert coerce_seconds(None) is None
-    assert coerce_seconds(10) == 10
-    assert coerce_seconds(10.5) == 10
-    assert coerce_seconds("1679") == 1679
-    assert coerce_seconds("1679.9") == 1679
-    assert coerce_seconds("27:59") == 1679
-    assert coerce_seconds("27:59.757000") == 1679
-    assert coerce_seconds("0:27:59.757000") == 1679
-    assert coerce_seconds("0:00:02.184000") == 2
-    assert coerce_seconds(timedelta(seconds=2.184)) == 2
-
-
-def test_analyze_replay_with_string_duration():
-    data = {
-        "players": [
-            {"name": "You", "civilization": "Franks", "winner": True},
-            {"name": "Opp", "civilization": "Britons", "winner": False},
-        ],
-        "duration": "0:27:59.757000",
-        "actions": [],
-    }
-    result = analyze_replay(data, you_name=None, you_player=1, export_level="coach")
-    assert result["coach_view"]["units"]["you"]["composition_snapshots"]
-    assert isinstance(result["match"]["duration"], int)
-
-
-def test_normalize_time_fields_nested():
-    payload = {
-        "timestamp": "0:00:02.184000",
-        "actions": [{"time": "27:59.757000"}, {"count": 3}],
-        "meta": {"duration": "1679.9"},
-    }
-    normalized = normalize_time_fields(payload)
-    assert normalized["timestamp"] == 2
-    assert normalized["actions"][0]["time"] == 1679
-    assert normalized["actions"][1]["count"] == 3
-    assert normalized["meta"]["duration"] == 1679
 
 
 def test_build_prompt_and_tsv_row():

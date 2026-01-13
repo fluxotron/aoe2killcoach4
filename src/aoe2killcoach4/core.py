@@ -15,7 +15,6 @@ from aoe2killcoach4.data_mappings import (
     TRASH_LINES,
     UNIT_LINE_MAP,
 )
-from aoe2killcoach4.time_utils import coerce_seconds, normalize_time_fields
 
 
 @dataclass
@@ -45,10 +44,7 @@ def parse_replay(path: str) -> ParsedReplay:
 def format_seconds(seconds: Optional[int]) -> Optional[str]:
     if seconds is None:
         return None
-    total_seconds = coerce_seconds(seconds)
-    if total_seconds is None:
-        return None
-    minutes, sec = divmod(max(0, total_seconds), 60)
+    minutes, sec = divmod(max(0, int(seconds)), 60)
     return f"{minutes}:{sec:02d}"
 
 
@@ -91,9 +87,7 @@ def extract_match_info(data: dict[str, Any]) -> dict[str, Any]:
 
 def _action_time(action: dict[str, Any]) -> Optional[int]:
     ts = action.get("timestamp")
-    if ts is None:
-        return None
-    return coerce_seconds(ts)
+    return int(ts) if ts is not None else None
 
 
 def _player_actions(data: dict[str, Any], player_index: int) -> list[dict[str, Any]]:
@@ -154,15 +148,9 @@ def _extract_uptimes(data: dict[str, Any], player_index: int) -> dict[str, Any]:
     if player_index < len(uptimes):
         uptime = uptimes[player_index]
         return {
-            "Feudal": coerce_seconds(uptime.get("feudal"))
-            if uptime.get("feudal") is not None
-            else None,
-            "Castle": coerce_seconds(uptime.get("castle"))
-            if uptime.get("castle") is not None
-            else None,
-            "Imperial": coerce_seconds(uptime.get("imperial"))
-            if uptime.get("imperial") is not None
-            else None,
+            "Feudal": uptime.get("feudal"),
+            "Castle": uptime.get("castle"),
+            "Imperial": uptime.get("imperial"),
         }
     return {}
 
@@ -538,28 +526,25 @@ def analyze_replay(
     you_player: int | None,
     export_level: str,
 ) -> dict[str, Any]:
-    normalized_data = normalize_time_fields(data)
-    players = normalized_data.get("players", [])
+    players = data.get("players", [])
     if len(players) < 1:
         raise ValueError("No players found in replay data.")
     you, opponent = find_player(players, you_name, you_player)
     you_index = players.index(you)
     opp_index = players.index(opponent)
 
-    match_info = extract_match_info(normalized_data)
-    duration = coerce_seconds(match_info.get("duration") or 0) or 0
-    if not isinstance(duration, int):
-        raise ValueError(f"Duration is not an integer: {duration!r}")
+    match_info = extract_match_info(data)
+    duration = int(match_info.get("duration") or 0)
 
-    you_actions = _player_actions(normalized_data, you_index)
-    opp_actions = _player_actions(normalized_data, opp_index)
+    you_actions = _player_actions(data, you_index)
+    opp_actions = _player_actions(data, opp_index)
     you_units = _collect_unit_events(you_actions)
     opp_units = _collect_unit_events(opp_actions)
     you_builds = _collect_build_events(you_actions)
     opp_builds = _collect_build_events(opp_actions)
 
-    you_timings = extract_timings(normalized_data, you_index)
-    opp_timings = extract_timings(normalized_data, opp_index)
+    you_timings = extract_timings(data, you_index)
+    opp_timings = extract_timings(data, opp_index)
 
     you_first_buildings = extract_first_buildings(you_builds)
     opp_first_buildings = extract_first_buildings(opp_builds)
